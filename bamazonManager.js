@@ -69,44 +69,94 @@ function viewLowInventry() {
 };
 
 function addInventory() {
-    inquirer.prompt({
-        type: "list",
+    inquirer.prompt([
+        {
+        type: "input",
         name: "addInventory",
         message: "Which item would you like to add inventory to?",
-        choices: ["1","2","3","4","5","6","7","8","9","10"]
+        },
+        {
+        type: "input",
+        name: "inventoryToAdd",
+        message: "Enter the quantity you wish to add",
+        }
 
-    }).then(function (input) {
+    ]).then(function (answer) {
         console.log("Updating inventory...\n");
-        var query = connection.query(
-            "UPDATE products SET quantity=? WHERE id=?", [100, input.addInventory],
+        connection.query('SELECT * FROM products WHERE ?', {id: answer.id},function(err,res) {
+            itemQuantity = res[0].stock_quantity + parseInt(answer.inventoryToAdd);
+        connection.query("UPDATE products SET ? WHERE ?", [
+                {
+                    stock_quantity: itemQuantity
+                },
+                { 
+                    id: answer.id
+                }
+            ],
             function (err, res) {
-                console.log(res.affectedRows + " products updated!\n");
+                console.log(input.addInventory + " products updated!\n");
                 // Call deleteProduct AFTER the UPDATE completes
-                deleteProduct();
-            }
-        );
-        console.log(query.sql);
-        })
-    };
+            });
+            connection.query('SELECT * FROM products WHERE ?', {id: answer.id},function(err,results) {
+                console.log('\n The Stock Quantity was updated- see Inventory Table\n');   
+                displayForManager(results);
+            });
+        });
+    });
+};
+    // Add a new product into the database with all of it's information, display the Inventory Table, prompt Manager if desires to continue
+function addNewProduct() {
+    inquirer.prompt([{
+        name: "productName",
+        type: "input",
+        message: " Enter the name of the product",
+    }, {
+        name: "departmentName",
+        type: "input",
+        message: " Enter the department of the product",
+    }, {
+        name: "price",
+        type: "input",
+        message: " Enter price of the product",
+    }, {
+        name: "quantity",
+        type: "input",
+        message: " Enter the quantity",                
+    }]).then(function(answer) {
+        connection.query("INSERT INTO products SET ?", {
+            product_name: answer.productName,
+            department_name: answer.departmentName,
+            price: answer.price,
+            stock_quantity: answer.quantity
+        }, function(err, res) {
+            console.log('\n  The new product was added - See the Inventory Table\n');
+                connection.query('SELECT * FROM products', function(err, results){  
+                    displayForManager(results);
+                });               
+        }); 
+    });
+};
+    // Displays Inventory Table for Manager, Results from a SELECT query are passed in as parameter and used 
+    var displayForManager = function(results) {   
+    var display = new displayTable();
+    display.displayInventoryTable(results);
+}
+Table = require('cli-table2');
 
-    function addNewProduct() {
-        console.log("Inserting a new product...\n");
-        var query = connection.query(
-            "INSERT INTO products SET ?",
-            {
-                product_name: "",
-                price: "",
-                stock_quantity: ""
-            },
-            function (err, res) {
-                console.log(" product inserted!\n");
-                // Call updateProduct AFTER the INSERT completes
-                //updateProduct();
-            }
-        );
-        console.log(query.sql);
-    };
+var displayTable = function() {
 
+    this.table = new Table({
+        head: ['id', 'product_name', 'price', 'stock_quantity'],
+    });
+    this.displayInventoryTable = function(results) {
+    	this.results = results;
+	    for (var i=0; i <this.results.length; i++) {
+	        this.table.push(
+	            [this.results[i].id, this.results[i].product_name, '$'+ this.results[i].price, this.results[i].stock_quantity] );
+	    }
+    	console.log('\n' + this.table.toString());
+	};
+}
    //  connection.query(queryStr, { artist: input.artist }, function (err, data) {
    //         if (err) throw err;
    //         for (var i = 0; i < data.length; i++) {

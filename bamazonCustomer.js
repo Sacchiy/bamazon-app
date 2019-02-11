@@ -66,13 +66,17 @@ function promptUserInput() {
                             if (err) throw err;
                             console.log("Your order has been completed! Total: " + total);
                             // re-prompt the user for if they want to bid or post
-                        }
-                    );
-                } else {
+                            }
+                        );
+                        } else {
                     console.log("Insufficient quantity! Your order did not go through");
                 };
-            };
-        });
+            //connection.query("UPDATE products SET product_sales=? WHERE id=?", (data[i].price) * (answer.unit), answer.id, function (err, data) {
+        //if (err) throw err;
+        //console.log("Product Sales Total: " + (data[i].price) * (answer.unit));
+    //});
+    };
     });
+});
 };
 
